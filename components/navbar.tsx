@@ -138,7 +138,7 @@ export default async function Navbar() {
                     <Link href="/login" className="block">
                       <Button
                         variant="default"
-                        className="w-full bg-mustard hover:bg-mustard/90 text-wood shadow-sm flex items-center gap-2 cursor-pointer"
+                        className="w-full mb-2 bg-mustard hover:bg-mustard/90 text-wood shadow-sm flex items-center gap-2 cursor-pointer"
                       >
                         <User className="h-4 w-4" />
                         Iniciar Sesión
