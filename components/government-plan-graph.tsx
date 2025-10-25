@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CheckCircle2, Clock, AlertCircle, Circle, Search, Calendar, TrendingUp } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 
 type NodeStatus = "completed" | "in-progress" | "delayed" | "pending"
 
@@ -125,15 +126,59 @@ const statusConfig = {
 }
 
 export default function GovernmentPlanGraph() {
+  const [initiatives, setInitiatives] = useState<PlanNode[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedNode, setSelectedNode] = useState<PlanNode | null>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<NodeStatus | "all">("all")
   const [viewMode, setViewMode] = useState<"grid" | "timeline">("grid")
 
-  const categories = Array.from(new Set(mockGovernmentPlan.map((node) => node.category)))
+  useEffect(() => {
+    async function loadInitiatives() {
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from("government_initiatives")
+          .select(`
+            *,
+            initiative_connections(
+              connected_initiative_id,
+              relationship_type
+            )
+          `)
+          .order("created_at", { ascending: false })
 
-  const filteredPlan = mockGovernmentPlan.filter((node) => {
+        if (error) throw error
+
+        const transformedData: PlanNode[] = data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          status: item.status as NodeStatus,
+          progress: item.progress,
+          category: item.category,
+          connections: item.initiative_connections?.map((c: any) => c.connected_initiative_id) || [],
+          deadline: item.deadline
+            ? new Date(item.deadline).toLocaleDateString("es-ES", { month: "short", year: "numeric" })
+            : undefined,
+        }))
+
+        setInitiatives(transformedData)
+      } catch (error) {
+        console.error("[v0] Error loading initiatives:", error)
+        setInitiatives(mockGovernmentPlan)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadInitiatives()
+  }, [])
+
+  const categories = Array.from(new Set(initiatives.map((node) => node.category)))
+
+  const filteredPlan = initiatives.filter((node) => {
     const matchesSearch =
       node.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       node.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -142,11 +187,23 @@ export default function GovernmentPlanGraph() {
   })
 
   const stats = {
-    total: mockGovernmentPlan.length,
-    completed: mockGovernmentPlan.filter((n) => n.status === "completed").length,
-    inProgress: mockGovernmentPlan.filter((n) => n.status === "in-progress").length,
-    delayed: mockGovernmentPlan.filter((n) => n.status === "delayed").length,
-    avgProgress: Math.round(mockGovernmentPlan.reduce((acc, n) => acc + n.progress, 0) / mockGovernmentPlan.length),
+    total: initiatives.length,
+    completed: initiatives.filter((n) => n.status === "completed").length,
+    inProgress: initiatives.filter((n) => n.status === "in-progress").length,
+    delayed: initiatives.filter((n) => n.status === "delayed").length,
+    avgProgress:
+      initiatives.length > 0 ? Math.round(initiatives.reduce((acc, n) => acc + n.progress, 0) / initiatives.length) : 0,
+  }
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-mustard border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-wood">Cargando iniciativas...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -371,7 +428,7 @@ export default function GovernmentPlanGraph() {
                 <h4 className="text-sm font-semibold text-wood-dark mb-2">Iniciativas Relacionadas</h4>
                 <div className="space-y-2">
                   {selectedNode.connections.map((connId) => {
-                    const connectedNode = mockGovernmentPlan.find((n) => n.id === connId)
+                    const connectedNode = initiatives.find((n) => n.id === connId)
                     if (!connectedNode) return null
                     return (
                       <button

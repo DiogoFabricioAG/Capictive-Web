@@ -2,43 +2,13 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Mail, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
+import { getNewsletters } from "@/lib/supabase/queries"
+import { NewsletterSubscriptionForm } from "@/components/newsletter-subscription-form"
 
-export default function NewsletterPage() {
-  const pastNewsletters = [
-    {
-      id: 1,
-      title: "Resumen Electoral Octubre 2025",
-      description: "Las principales tendencias electorales del mes, análisis de datos y predicciones basadas en IA.",
-      date: "25 Oct 2025",
-      preview:
-        "Este mes hemos visto cambios significativos en las preferencias electorales. Nuestro análisis de IA revela...",
-    },
-    {
-      id: 2,
-      title: "Transparencia Gubernamental: Avances y Desafíos",
-      description: "Un análisis profundo sobre el estado actual de la transparencia en gobiernos latinoamericanos.",
-      date: "18 Oct 2025",
-      preview:
-        "La transparencia gubernamental sigue siendo un desafío en la región. Sin embargo, nuevas tecnologías...",
-    },
-    {
-      id: 3,
-      title: "Verificación de Datos: Casos de Estudio",
-      description: "Ejemplos reales de cómo Capictive ha ayudado a verificar información en campañas políticas.",
-      date: "11 Oct 2025",
-      preview: "Durante las últimas semanas, hemos identificado y verificado más de 150 declaraciones políticas...",
-    },
-    {
-      id: 4,
-      title: "El Futuro de las Campañas Digitales",
-      description: "Tendencias emergentes en marketing político y el rol de la inteligencia artificial.",
-      date: "4 Oct 2025",
-      preview: "Las campañas digitales están evolucionando rápidamente. La IA no solo ayuda en la segmentación...",
-    },
-  ]
+export default async function NewsletterPage() {
+  const pastNewsletters = await getNewsletters()
 
   return (
     <main className="min-h-screen">
@@ -68,12 +38,7 @@ export default function NewsletterPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form className="flex flex-col sm:flex-row gap-3">
-                <Input type="email" placeholder="tu@email.com" className="flex-1" />
-                <Button type="submit" size="lg">
-                  Suscribirse
-                </Button>
-              </form>
+              <NewsletterSubscriptionForm />
               <p className="text-xs text-muted-foreground text-center mt-4">
                 Sin spam. Cancela tu suscripción en cualquier momento.
               </p>
@@ -92,15 +57,19 @@ export default function NewsletterPage() {
                     <CardTitle className="text-xl">{newsletter.title}</CardTitle>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
                       <Calendar className="h-4 w-4" />
-                      {newsletter.date}
+                      {new Date(newsletter.published_at).toLocaleDateString("es-ES", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </div>
                   </div>
-                  <CardDescription className="text-base mb-3">{newsletter.description}</CardDescription>
-                  <p className="text-sm text-muted-foreground italic">{newsletter.preview}</p>
+                  <CardDescription className="text-base mb-3">{newsletter.summary}</CardDescription>
+                  <p className="text-sm text-muted-foreground italic line-clamp-2">{newsletter.content}</p>
                 </CardHeader>
                 <CardContent>
-                  <Link href={`/newsletter/${newsletter.id}`}>
-                    <Button variant="outline" size="sm">
+                  <Link href={`/newsletter/${newsletter.slug}`}>
+                    <Button variant="outline" size="sm" className="cursor-pointer bg-transparent">
                       Leer completo
                     </Button>
                   </Link>

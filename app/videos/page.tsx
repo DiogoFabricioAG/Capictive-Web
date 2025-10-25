@@ -3,43 +3,10 @@ import { Footer } from "@/components/footer"
 import { ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { getVideos } from "@/lib/supabase/queries"
 
-export default function VideosPage() {
-  const videos = [
-    {
-      id: 1,
-      title: "Análisis Electoral: Tendencias 2024",
-      description:
-        "Un análisis profundo de las tendencias electorales y cómo la IA está transformando las campañas políticas.",
-      thumbnail: "/political-analysis-video-thumbnail.jpg",
-      xLink: "https://x.com/capictive",
-      date: "15 Oct 2025",
-    },
-    {
-      id: 2,
-      title: "Transparencia Gubernamental con IA",
-      description: "Cómo Capictive ayuda a rastrear y verificar promesas políticas en tiempo real.",
-      thumbnail: "/government-transparency-ai-video.jpg",
-      xLink: "https://x.com/capictive",
-      date: "10 Oct 2025",
-    },
-    {
-      id: 3,
-      title: "Verificación de Datos en Campañas",
-      description: "La importancia de la verificación de datos y cómo nuestra IA detecta información falsa.",
-      thumbnail: "/fact-checking-campaign-video.jpg",
-      xLink: "https://x.com/capictive",
-      date: "5 Oct 2025",
-    },
-    {
-      id: 4,
-      title: "El Futuro de las Campañas Digitales",
-      description: "Exploramos cómo la inteligencia artificial está redefiniendo las estrategias de campaña.",
-      thumbnail: "/digital-campaign-future-video.jpg",
-      xLink: "https://x.com/capictive",
-      date: "1 Oct 2025",
-    },
-  ]
+export default async function VideosPage() {
+  const videos = await getVideos()
 
   return (
     <main className="min-h-screen">
@@ -61,7 +28,7 @@ export default function VideosPage() {
             <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="aspect-video relative overflow-hidden bg-muted">
                 <img
-                  src={video.thumbnail || "/placeholder.svg"}
+                  src={video.thumbnail_url || "/placeholder.svg?height=400&width=600"}
                   alt={video.title}
                   className="w-full h-full object-cover"
                 />
@@ -70,15 +37,21 @@ export default function VideosPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <CardTitle className="text-xl mb-2">{video.title}</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground mb-2">{video.date}</CardDescription>
+                    <CardDescription className="text-sm text-muted-foreground mb-2">
+                      {new Date(video.published_at).toLocaleDateString("es-ES", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </CardDescription>
                   </div>
                 </div>
                 <CardDescription className="text-base">{video.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button asChild variant="outline" className="w-full bg-transparent">
+                <Button asChild variant="outline" className="w-full bg-transparent cursor-pointer">
                   <a
-                    href={video.xLink}
+                    href={video.twitter_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2"
