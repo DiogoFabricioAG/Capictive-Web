@@ -12,7 +12,7 @@ export default function Footer() {
           {/* Social Links */}
           <div className="flex items-center gap-6">
             <Link
-              href="https://twitter.com"
+              href="https://twitter.com/capictive"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
@@ -21,7 +21,7 @@ export default function Footer() {
               <Twitter className="w-5 h-5" />
             </Link>
             <Link
-              href="https://instagram.com"
+              href="https://instagram.com/capictive"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
@@ -30,7 +30,7 @@ export default function Footer() {
               <Instagram className="w-5 h-5" />
             </Link>
             <Link
-              href="https://telegram.org"
+              href="https://t.me/capictive_bot"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
@@ -40,7 +40,6 @@ export default function Footer() {
             </Link>
           </div>
 
-          {/* Legal Links */}
           <div className="flex items-center gap-6 text-sm">
             <Link href="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
               Términos de Servicio
