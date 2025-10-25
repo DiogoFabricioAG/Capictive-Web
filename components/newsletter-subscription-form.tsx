@@ -1,12 +1,9 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { subscribeToNewsletter } from "@/lib/supabase/queries"
-import { createClient } from "@/lib/supabase/client"
 
 export function NewsletterSubscriptionForm() {
   const [email, setEmail] = useState("")
@@ -19,16 +16,27 @@ export function NewsletterSubscriptionForm() {
     setMessage(null)
 
     try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const response = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      })
 
-      await subscribeToNewsletter(email, user?.id)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al suscribirse")
+      }
+
       setMessage({ type: "success", text: "¡Gracias por suscribirte! Revisa tu correo." })
       setEmail("")
     } catch (error) {
-      setMessage({ type: "error", text: "Error al suscribirse. Intenta de nuevo." })
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Error al suscribirse. Intenta de nuevo.",
+      })
     } finally {
       setIsLoading(false)
     }
