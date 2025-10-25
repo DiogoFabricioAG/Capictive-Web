@@ -76,10 +76,10 @@ export default async function Navbar() {
                 <Menu className="h-6 w-6 text-wood" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] bg-cream border-l border-wood/10">
-              <div className="flex flex-col h-full">
+            <SheetContent side="right" className="w-[300px] border-l border-wood/10">
+              <div className="flex flex-col h-full bg-wood">
                 {/* Mobile Menu Header */}
-                <div className="flex items-center gap-3 pb-6 border-b border-wood/10">
+                <div className="flex items-center gap-3 py-3 border-b border-wood/80 ">
                   <Image
                     src="/capictive-logo.png"
                     alt="Capictive"
