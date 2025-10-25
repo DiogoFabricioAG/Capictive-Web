@@ -1,22 +1,42 @@
 "use client"
 
 import type React from "react"
-
-import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
 import { Send, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, useState } from "react"
 import Image from "next/image"
+import { formatMarkdownResponse } from "@/lib/capictive-bot"
+import { createClient } from "@/lib/supabase/client"
+
+interface Message {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  created_at: string
+}
 
 export default function ChatInterface() {
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
-  })
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    async function getUser() {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+      }
+    }
+    getUser()
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -26,17 +46,67 @@ export default function ChatInterface() {
     scrollToBottom()
   }, [messages])
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     const message = formData.get("message") as string
 
-    if (message.trim()) {
-      sendMessage({ text: message })
-      e.currentTarget.reset()
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "auto"
+    if (!message.trim() || !userId) return
+
+    // Add user message to UI immediately
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: message,
+      created_at: new Date().toISOString(),
+    }
+    setMessages((prev) => [...prev, userMessage])
+
+    e.currentTarget.reset()
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto"
+    }
+
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/chat/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          conversationId,
+          userId,
+        }),
+      })
+
+      if (!response.ok) throw new Error("Failed to send message")
+
+      const data = await response.json()
+
+      if (!conversationId && data.conversationId) {
+        setConversationId(data.conversationId)
       }
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.response,
+        created_at: new Date().toISOString(),
+      }
+      setMessages((prev) => [...prev, assistantMessage])
+    } catch (error) {
+      console.error("[v0] Error sending message:", error)
+      // Show error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.",
+        created_at: new Date().toISOString(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -97,27 +167,28 @@ export default function ChatInterface() {
                 message.role === "user" ? "bg-mustard text-wood-dark" : "bg-white border border-wood/20 text-wood-dark"
               }`}
             >
-              {message.parts.map((part, index) => {
-                if (part.type === "text") {
-                  return (
-                    <p key={index} className="whitespace-pre-wrap leading-relaxed text-sm sm:text-base">
-                      {part.text}
-                    </p>
-                  )
-                }
-                return null
-              })}
+              {message.role === "assistant" ? (
+                <div
+                  className="prose prose-sm sm:prose-base max-w-none prose-headings:text-wood-dark prose-p:text-wood-dark prose-strong:text-wood-dark prose-li:text-wood-dark"
+                  dangerouslySetInnerHTML={{ __html: formatMarkdownResponse(message.content) }}
+                />
+              ) : (
+                <p className="whitespace-pre-wrap leading-relaxed text-sm sm:text-base">{message.content}</p>
+              )}
             </div>
           </div>
         ))}
 
-        {status === "in_progress" && (
+        {isLoading && (
           <div className="flex gap-2 sm:gap-3 justify-start">
             <div className="flex-shrink-0">
               <Image src="/capictive-logo.png" alt="Capictive" width={28} height={28} className="sm:w-8 sm:h-8" />
             </div>
             <div className="bg-white border border-wood/20 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-md">
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-wood animate-spin" />
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-wood animate-spin" />
+                <span className="text-sm text-wood">Capictive está pensando...</span>
+              </div>
             </div>
           </div>
         )}
@@ -132,7 +203,7 @@ export default function ChatInterface() {
             name="message"
             placeholder="Escribe tu mensaje..."
             className="flex-1 min-h-[50px] sm:min-h-[60px] max-h-[150px] sm:max-h-[200px] resize-none border-wood/20 focus:border-mustard focus:ring-mustard bg-white text-sm sm:text-base"
-            disabled={status === "in_progress"}
+            disabled={isLoading}
             onKeyDown={handleKeyDown}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement
@@ -142,10 +213,10 @@ export default function ChatInterface() {
           />
           <Button
             type="submit"
-            disabled={status === "in_progress"}
+            disabled={isLoading}
             className="bg-mustard hover:bg-mustard/90 text-wood-dark self-end cursor-pointer disabled:cursor-not-allowed h-[50px] sm:h-auto px-3 sm:px-4"
           >
-            {status === "in_progress" ? (
+            {isLoading ? (
               <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
             ) : (
               <Send className="w-4 h-4 sm:w-5 sm:h-5" />
