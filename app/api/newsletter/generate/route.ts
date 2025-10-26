@@ -24,14 +24,17 @@ export async function POST(request: NextRequest) {
     const slug = title
       .toLowerCase()
       .normalize("NFD")
+      // eslint-disable-next-line unicorn/prefer-string-replace-all
       .replace(/[\u0300-\u036f]/g, "")
+      // eslint-disable-next-line unicorn/prefer-string-replace-all
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
+      // eslint-disable-next-line unicorn/prefer-string-replace-all
+      .replace(/(^-+)|(-+$)/g, "")
 
     // Extract summary (first paragraph after title)
     const contentWithoutTitle = lines.slice(1).join("\n")
-    const paragraphs = contentWithoutTitle.split("\n\n").filter((p) => p.trim())
-    const summary = paragraphs[0]?.substring(0, 200) || "Newsletter generado por Capictive"
+    const firstParagraph = contentWithoutTitle.split("\n\n").find((p) => p.trim())
+    const summary = firstParagraph?.slice(0, 200) || "Newsletter generado por Capictive"
 
     // Generate a fun case number: YEAR-XXXX (4 random digits)
     const year = new Date().getFullYear()

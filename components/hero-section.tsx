@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function HeroSection() {
   return (
@@ -12,7 +13,7 @@ export function HeroSection() {
 
         {/* Subtitle */}
         <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-medium text-foreground mb-3 sm:mb-4 text-balance px-4">
-          El Agente de IA para Campañas Electorales y Seguimiento Gubernamental
+          El Agente de IA para Campañas Electorales
         </h2>
 
         {/* Description */}
@@ -23,11 +24,18 @@ export function HeroSection() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
-          <Button size="lg" className="w-full sm:w-auto min-w-[200px] cursor-pointer">
-            Ver Seguimiento del Plan
+          {/* Sends to dashboard; middleware redirects to /login if not authenticated */}
+          <Button size="lg" className="w-full sm:w-auto min-w-[200px] cursor-pointer" asChild>
+            <Link href="/dashboard">Empezar a hablar</Link>
           </Button>
-          <Button size="lg" variant="outline" className="w-full sm:w-auto min-w-[200px] bg-transparent cursor-pointer">
-            Conocer la IA
+          {/* Scroll down to CTA section ("¿Listo para empezar?") */}
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full sm:w-auto min-w-[200px] bg-transparent cursor-pointer"
+            asChild
+          >
+            <a href="#get-started">Chatear por Telegram</a>
           </Button>
         </div>
 

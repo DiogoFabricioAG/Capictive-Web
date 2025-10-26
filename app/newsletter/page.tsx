@@ -37,28 +37,7 @@ export default async function NewsletterPage() {
           </div>
         )}
 
-        {/* Subscription Form */}
-        <div className="max-w-2xl mx-auto mb-20">
-          <Card className="border-2 border-primary/20">
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Mail className="h-8 w-8 text-primary" />
-                </div>
-              </div>
-              <CardTitle className="text-2xl">Suscríbete a nuestro newsletter</CardTitle>
-              <CardDescription className="text-base">
-                Únete a más de 5,000 suscriptores que reciben insights semanales sobre el mundo político y tecnológico.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NewsletterSubscriptionForm />
-              <p className="text-xs text-muted-foreground text-center mt-4">
-                Sin spam. Cancela tu suscripción en cualquier momento.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        
 
         {/* Past Newsletters */}
         <div className="max-w-4xl mx-auto">
@@ -93,6 +72,7 @@ export default async function NewsletterPage() {
           </div>
         </div>
 
+        
         {/* Benefits Section */}
         <div className="max-w-4xl mx-auto mt-16 grid md:grid-cols-3 gap-6">
           <div className="text-center p-6">
@@ -120,6 +100,28 @@ export default async function NewsletterPage() {
           </div>
         </div>
       </div>
+{/* Subscription Form */}
+        <div className="max-w-2xl mx-auto mb-20">
+          <Card className="border-2 border-primary/20">
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Mail className="h-8 w-8 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Suscríbete a nuestro newsletter</CardTitle>
+              <CardDescription className="text-base">
+                Únete a más de 5,000 suscriptores que reciben insights semanales sobre el mundo político y tecnológico.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <NewsletterSubscriptionForm />
+              <p className="text-xs text-muted-foreground text-center mt-4">
+                Sin spam. Cancela tu suscripción en cualquier momento.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
       <Footer />
     </main>

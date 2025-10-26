@@ -124,6 +124,11 @@
   }
 }
 
+/* Smooth scrolling for in-page anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Adding shimmer animation for active sidebar items */
 @keyframes shimmer {
   0% {
