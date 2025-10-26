@@ -4,10 +4,10 @@ import { getSupabaseAdminClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
-    const { topic } = await request.json()
+    const { title, topic } = await request.json()
 
-    if (!topic) {
-      return NextResponse.json({ error: "Topic is required" }, { status: 400 })
+    if (!title || !topic) {
+      return NextResponse.json({ error: "Title and topic are required" }, { status: 400 })
     }
 
     const botResponse = await queryCapictiveBot(topic, "podcast")
@@ -15,10 +15,6 @@ export async function POST(request: NextRequest) {
     if (!botResponse.response) {
       return NextResponse.json({ error: "Failed to generate podcast content" }, { status: 500 })
     }
-
-    const lines = botResponse.response.split("\n").filter((line) => line.trim())
-    const titleLine = lines[0] || "Podcast sin título"
-    const title = titleLine.replace(/^#+\s*/, "").trim()
 
     const supabase = getSupabaseAdminClient()
     const { data: existingPodcasts } = await supabase
@@ -29,17 +25,16 @@ export async function POST(request: NextRequest) {
 
     const nextEpisodeNumber = existingPodcasts && existingPodcasts[0] ? existingPodcasts[0].episode_number + 1 : 1
 
-    const contentWithoutTitle = lines.slice(1).join("\n")
-    const description = contentWithoutTitle.substring(0, 200).trim() + "..."
+    const description = botResponse.response.substring(0, 200).trim() + "..."
 
     const { data: podcast, error } = await supabase
       .from("podcasts")
       .insert({
-        title,
+        title, // Use user-provided title
         description,
         audio_url: botResponse.audio?.url || null,
         episode_number: nextEpisodeNumber,
-        duration: "Por determinar", // Could be calculated from audio file
+        duration: "Por determinar",
         published_at: new Date().toISOString(),
       })
       .select()

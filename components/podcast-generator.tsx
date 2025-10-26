@@ -3,17 +3,24 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Mic } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 export function PodcastGenerator() {
+  const [title, setTitle] = useState("")
   const [topic, setTopic] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   const handleGenerate = async () => {
+    if (!title.trim()) {
+      setError("Por favor ingresa un título para el podcast")
+      return
+    }
+
     if (!topic.trim()) {
       setError("Por favor ingresa un tema para el podcast")
       return
@@ -26,15 +33,15 @@ export function PodcastGenerator() {
       const response = await fetch("/api/podcast/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ title, topic }),
       })
 
       if (!response.ok) throw new Error("Failed to generate podcast")
 
       const data = await response.json()
 
-      // Refresh the page to show the new podcast
       router.refresh()
+      setTitle("")
       setTopic("")
     } catch (err) {
       console.error("[v0] Error generating podcast:", err)
@@ -57,6 +64,20 @@ export function PodcastGenerator() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
+          <label htmlFor="title" className="text-sm font-medium text-wood-dark mb-2 block">
+            Título del Podcast
+          </label>
+          <Input
+            id="title"
+            placeholder="Ej: Análisis de las propuestas económicas"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="border-wood/20 focus:border-mustard focus:ring-mustard"
+            disabled={isGenerating}
+          />
+        </div>
+
+        <div>
           <label htmlFor="topic" className="text-sm font-medium text-wood-dark mb-2 block">
             Tema del Podcast
           </label>
@@ -74,7 +95,7 @@ export function PodcastGenerator() {
 
         <Button
           onClick={handleGenerate}
-          disabled={isGenerating || !topic.trim()}
+          disabled={isGenerating || !title.trim() || !topic.trim()}
           className="w-full bg-mustard hover:bg-mustard/90 text-wood-dark cursor-pointer disabled:cursor-not-allowed"
         >
           {isGenerating ? (
