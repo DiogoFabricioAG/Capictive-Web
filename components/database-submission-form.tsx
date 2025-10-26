@@ -6,6 +6,8 @@ import { Upload, LinkIcon, AlertCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { uploadFile } from "@/lib/utils"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 interface DatabaseSubmissionFormProps {
   onSuccess?: () => void
@@ -14,23 +16,94 @@ interface DatabaseSubmissionFormProps {
 export function DatabaseSubmissionForm({ onSuccess }: DatabaseSubmissionFormProps) {
   const [submissionType, setSubmissionType] = useState<"document" | "url">("url")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [docFile, setDocFile] = useState<File | null>(null)
+  // La subida se hará al enviar el formulario; este componente solo guarda el archivo seleccionado
+  const [showThanks, setShowThanks] = useState(false)
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setDocFile(file)
+  }
+
+  const playEasterEggAudio = () => {
+    try {
+      const tracks = [
+        "/audios/mensaje-1-capictive.mp3",
+        "/audios/mensaje-2-capictive.mp3",
+        "/audios/mensaje-3-capictive.mp3",
+      ]
+      const pick = tracks[Math.floor(Math.random() * tracks.length)]
+      const audio = new Audio(pick)
+      audio.volume = 0.8
+      // Fire-and-forget; if the browser blocks autoplay, we ignore the error
+      void audio.play().catch(() => {})
+    } catch {
+      // ignore any audio errors silently
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
-
-    // Simulate submission
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    alert("¡Gracias por tu contribución! Tu envío será revisado por nuestro equipo.")
-    setIsSubmitting(false)
-
-    // Reset form
     const form = e.currentTarget
-    form.reset()
+    try {
+      // Recopilar datos del formulario
+      const type = submissionType
+      const category = (form.querySelector('#submission-category') as HTMLSelectElement)?.value || ''
+      const description = (form.querySelector('#submission-description') as HTMLTextAreaElement)?.value || ''
+      const submitterName = (form.querySelector('#submitter-name') as HTMLInputElement)?.value || ''
+      const submitterEmail = (form.querySelector('#submitter-email') as HTMLInputElement)?.value || ''
 
-    // Call onSuccess callback to close modal
-    onSuccess?.()
+      let url: string | undefined
+      let uploadResult: unknown | undefined
+
+      if (type === 'url') {
+        url = (form.querySelector('#submission-url') as HTMLInputElement)?.value || ''
+        if (!url) throw new Error('Debes indicar una URL válida.')
+      } else {
+        if (!docFile) throw new Error('Debes seleccionar un documento para subir.')
+        // Subir el archivo al enviar el formulario
+        uploadResult = await uploadFile(docFile)
+        if (!uploadResult) throw new Error('La subida del documento no devolvió resultado.')
+      }
+
+      // Construir el payload con toda la info
+      const payload = {
+        type,
+        url,
+        category,
+        description,
+        submitter: { name: submitterName, email: submitterEmail },
+        document: docFile ? { name: docFile.name, type: docFile.type, size: docFile.size } : undefined,
+        uploadResult,
+      }
+
+      // Aquí podrías hacer un fetch a tu API para guardar la metadata en DB
+      // await fetch('/api/submissions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+
+      // eslint-disable-next-line no-console
+      console.log('Submission payload:', payload)
+      if (type === 'document') {
+        playEasterEggAudio()
+      }
+      // Mostrar modal de agradecimiento ~10s y luego cerrar modal padre con onSuccess
+      setShowThanks(true)
+      window.setTimeout(() => {
+        setShowThanks(false)
+        onSuccess?.()
+      }, 10000)
+
+      // Reset de formulario y estado
+      form.reset()
+      setDocFile(null)
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Error al enviar el formulario:', err)
+      // Aquí podrías mostrar un toast/modal de error
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -60,23 +133,38 @@ export function DatabaseSubmissionForm({ onSuccess }: DatabaseSubmissionFormProp
       {/* URL Input */}
       {submissionType === "url" && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">URL de la Noticia o Fuente</label>
-          <Input type="url" placeholder="https://ejemplo.com/noticia" required className="bg-card border-wood/20" />
+          <label htmlFor="submission-url" className="text-sm font-medium text-foreground">URL de la Noticia o Fuente</label>
+          <Input id="submission-url" type="url" placeholder="https://ejemplo.com/noticia" required className="bg-card border-wood/20" />
         </div>
       )}
 
       {/* Document Upload */}
       {submissionType === "document" && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Documento (PDF, DOC, DOCX)</label>
-          <Input type="file" accept=".pdf,.doc,.docx" required className="bg-card border-wood/20 cursor-pointer" />
+          <label htmlFor="submission-doc" className="text-sm font-medium text-foreground">Documento (PDF, DOC, DOCX)</label>
+          <Input
+            id="submission-doc"
+            type="file"
+            accept=".pdf,.doc,.docx"
+            required
+            onChange={handleDocumentChange}
+            className="bg-card border-wood/20 cursor-pointer"
+          />
+
+          {docFile && (
+            <div className="text-sm text-muted-foreground">
+              Archivo: <span className="text-foreground">{docFile.name}</span>
+            </div>
+          )}
+
         </div>
       )}
 
       {/* Category */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Categoría</label>
+        <label htmlFor="submission-category" className="text-sm font-medium text-foreground">Categoría</label>
         <select
+          id="submission-category"
           required
           className="w-full px-3 py-2 bg-card border border-wood/20 rounded-md text-foreground cursor-pointer"
         >
@@ -90,8 +178,9 @@ export function DatabaseSubmissionForm({ onSuccess }: DatabaseSubmissionFormProp
 
       {/* Description */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Descripción y Contexto</label>
+        <label htmlFor="submission-description" className="text-sm font-medium text-foreground">Descripción y Contexto</label>
         <Textarea
+          id="submission-description"
           placeholder="Explica por qué esta fuente es relevante y qué información contiene..."
           required
           rows={4}
@@ -102,12 +191,12 @@ export function DatabaseSubmissionForm({ onSuccess }: DatabaseSubmissionFormProp
       {/* Submitter Info */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Tu Nombre (opcional)</label>
-          <Input type="text" placeholder="Juan Pérez" className="bg-card border-wood/20" />
+          <label htmlFor="submitter-name" className="text-sm font-medium text-foreground">Tu Nombre (opcional)</label>
+          <Input id="submitter-name" type="text" placeholder="Juan Pérez" className="bg-card border-wood/20" />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Tu Email (opcional)</label>
-          <Input type="email" placeholder="tu@email.com" className="bg-card border-wood/20" />
+          <label htmlFor="submitter-email" className="text-sm font-medium text-foreground">Tu Email (opcional)</label>
+          <Input id="submitter-email" type="email" placeholder="tu@email.com" className="bg-card border-wood/20" />
         </div>
       </div>
 
@@ -124,10 +213,32 @@ export function DatabaseSubmissionForm({ onSuccess }: DatabaseSubmissionFormProp
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-mustard hover:bg-mustard/90 text-wood cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full duration-300  hover:bg-mustard/90  cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? "Enviando..." : "Enviar para Revisión"}
       </Button>
+
+      {/* Modal de agradecimiento */}
+      <Dialog open={showThanks} onOpenChange={setShowThanks}>
+        <DialogContent showCloseButton className="text-center">
+          <DialogHeader>
+            <DialogTitle>¡Gracias por tu contribución!</DialogTitle>
+            <DialogDescription>
+              Estamos procesando tu envío. Puedes cerrar esta ventana o esperar a que se cierre automáticamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-2 h-2 w-full bg-muted rounded">
+            <div
+              className="h-2 w-full rounded"
+              style={{
+                backgroundColor: 'var(--color-primary)',
+                animation: 'shimmer 2s linear infinite',
+              }}
+            />
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">Esta ventana se cerrará en ~10 segundos.</p>
+        </DialogContent>
+      </Dialog>
     </form>
   )
 }
