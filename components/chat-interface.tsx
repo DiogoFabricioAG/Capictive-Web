@@ -14,6 +14,7 @@ interface Message {
   role: "user" | "assistant"
   content: string
   created_at: string
+  audioUrl?: string | null
 }
 
 export default function ChatInterface() {
@@ -94,6 +95,7 @@ export default function ChatInterface() {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: data.response,
+        audioUrl: data.audioUrl ?? null,
         created_at: new Date().toISOString(),
       }
       setMessages((prev) => [...prev, assistantMessage])
@@ -170,10 +172,20 @@ export default function ChatInterface() {
               }`}
             >
               {message.role === "assistant" ? (
-                <div
-                  className="prose prose-sm sm:prose-base max-w-none prose-headings:text-wood-dark prose-p:text-wood-dark prose-strong:text-wood-dark prose-li:text-wood-dark"
-                  dangerouslySetInnerHTML={{ __html: formatMarkdownResponse(message.content) }}
-                />
+                <>
+                  <div
+                    className="prose prose-sm sm:prose-base max-w-none prose-headings:text-wood-dark prose-p:text-wood-dark prose-strong:text-wood-dark prose-li:text-wood-dark"
+                    dangerouslySetInnerHTML={{ __html: formatMarkdownResponse(message.content) }}
+                  />
+                  {message.audioUrl && (
+                    <div className="mt-3">
+                      <audio controls src={message.audioUrl} className="w-full">
+                        <track kind="captions" />
+                        Your browser does not support the audio element.
+                      </audio>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="whitespace-pre-wrap leading-relaxed text-sm sm:text-base">{message.content}</p>
               )}

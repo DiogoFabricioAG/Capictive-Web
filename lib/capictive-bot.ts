@@ -4,9 +4,11 @@ const WORKER_URL = "https://capictive-brain.diogofabricio17.workers.dev"
 
 export interface BotResponse {
   response: string
+  audio?: { url: string; key?: string }
+  type?: string
 }
 
-export async function queryCapictiveBot(query: string, style: string = "default"): Promise<string> {
+export async function queryCapictiveBot(query: string, style: string = "default"): Promise<BotResponse> {
   try {
     const response = await fetch(WORKER_URL, {
       method: "POST",
@@ -21,7 +23,7 @@ export async function queryCapictiveBot(query: string, style: string = "default"
     }
 
     const data: BotResponse = await response.json()
-    return data.response
+    return data
   } catch (error) {
     console.error("[v0] Error querying Capictive bot:", error)
     throw error

@@ -36,11 +36,12 @@ export async function POST(req: Request) {
     if (userMsgError) throw userMsgError
 
     const botResponse = await queryCapictiveBot(message, style)
+    const contentToSave = botResponse.response
 
     const { error: assistantMsgError } = await supabase.from("chat_messages").insert({
       conversation_id: currentConversationId,
       role: "assistant",
-      content: botResponse,
+      content: contentToSave,
     })
 
     if (assistantMsgError) throw assistantMsgError
@@ -51,7 +52,8 @@ export async function POST(req: Request) {
       .eq("id", currentConversationId)
 
     return NextResponse.json({
-      response: botResponse,
+      response: contentToSave,
+      audioUrl: botResponse.audio?.url ?? null,
       conversationId: currentConversationId,
     })
   } catch (error) {
