@@ -10,6 +10,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Title and topic are required" }, { status: 400 })
     }
 
+    console.log("[v0] Generating podcast:", { title, topic })
+
     const botResponse = await queryCapictiveBot(topic, "podcast")
 
     if (!botResponse.response) {
@@ -17,6 +19,8 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getSupabaseAdminClient()
+
+    // Get the next episode number
     const { data: existingPodcasts } = await supabase
       .from("podcasts")
       .select("episode_number")
@@ -27,10 +31,12 @@ export async function POST(request: NextRequest) {
 
     const description = botResponse.response.substring(0, 200).trim() + "..."
 
+    console.log("[v0] Saving podcast to database:", { title, episode: nextEpisodeNumber })
+
     const { data: podcast, error } = await supabase
       .from("podcasts")
       .insert({
-        title, // Use user-provided title
+        title,
         description,
         audio_url: botResponse.audio?.url || null,
         episode_number: nextEpisodeNumber,
@@ -41,9 +47,17 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error("[v0] Error saving podcast:", error)
-      return NextResponse.json({ error: "Failed to save podcast" }, { status: 500 })
+      console.error("[v0] Database error:", error)
+      return NextResponse.json(
+        {
+          error: "Failed to save podcast",
+          details: error.message,
+        },
+        { status: 500 },
+      )
     }
+
+    console.log("[v0] Podcast saved successfully:", podcast.id)
 
     return NextResponse.json({
       success: true,
@@ -51,6 +65,12 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("[v0] Error generating podcast:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
   }
 }

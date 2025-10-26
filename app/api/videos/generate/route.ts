@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { getSupabaseAdminClient } from "@/lib/supabase/server"
 
 const VIDEO_URLS: Record<string, string> = {
   video1: "https://pub-d080c9e6f19a459ca925c3351abec237.r2.dev/Videos/Futuro%20con%20Jeannette%20Jaram.mp4",
@@ -33,30 +33,22 @@ export async function POST(request: NextRequest) {
     const result = await webhookResponse.json()
     console.log("[v0] Webhook response:", result)
 
-    // Save to Supabase videos table
-    const supabase = await getSupabaseServerClient()
-    const { data: userData } = await supabase.auth.getUser()
-
-    if (!userData.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const supabase = getSupabaseAdminClient()
 
     // Generate a title from the message (first 60 chars)
     const title = message.length > 60 ? message.substring(0, 60) + "..." : message
 
-    // Determine the URL based on the result type
-    const videoUrl = result.type === "video" ? result.link : null
-    const audioUrl = result.type === "audio" ? result.link : null
+    console.log("[v0] Saving video to database:", { title, type: result.type })
 
     const { data: video, error: dbError } = await supabase
       .from("videos")
       .insert({
         title,
         description: message,
-        twitter_url: result.type === "video" ? result.link : "#",
+        youtube_url: result.type === "video" ? result.link : null, // Use youtube_url instead of video_url
+        twitter_url: result.type === "video" ? result.link : "#", // Keep twitter_url for social sharing
         thumbnail_url: result.type === "audio" ? "/images/capictive-detective-poster.png" : null,
-        video_url: videoUrl,
-        audio_url: audioUrl,
+        duration: "Por determinar",
         published_at: new Date().toISOString(),
       })
       .select()
@@ -64,14 +56,26 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error("[v0] Database error:", dbError)
-      throw dbError
+      return NextResponse.json(
+        {
+          error: "Failed to save video",
+          details: dbError.message,
+        },
+        { status: 500 },
+      )
     }
 
-    console.log("[v0] Video saved to database:", video)
+    console.log("[v0] Video saved successfully:", video.id)
 
     return NextResponse.json({ success: true, result, video })
   } catch (error) {
     console.error("[v0] Error generating video:", error)
-    return NextResponse.json({ error: "Failed to generate video" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Failed to generate video",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
   }
 }

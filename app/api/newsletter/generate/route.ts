@@ -10,6 +10,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Topic is required" }, { status: 400 })
     }
 
+    console.log("[v0] Generating newsletter for topic:", topic)
+
     // Call the bot with "detailed" style to generate newsletter content
     const botResponse = await queryCapictiveBot(topic, "detailed")
 
@@ -31,12 +33,16 @@ export async function POST(request: NextRequest) {
     const paragraphs = contentWithoutTitle.split("\n\n").filter((p) => p.trim())
     const summary = paragraphs[0]?.substring(0, 200) || "Newsletter generado por Capictive"
 
-    // Save to database using admin client to bypass RLS for publishing newsletters
-    const supabase = getSupabaseAdminClient()
     // Generate a fun case number: YEAR-XXXX (4 random digits)
     const year = new Date().getFullYear()
     const random4 = Math.floor(1000 + Math.random() * 9000)
     const caseNumber = `${year}-${random4}`
+
+    console.log("[v0] Saving newsletter to database:", { title, slug, caseNumber })
+
+    // Save to database using admin client to bypass RLS for publishing newsletters
+    const supabase = getSupabaseAdminClient()
+
     const { data, error } = await supabase
       .from("newsletters")
       .insert({
@@ -46,12 +52,18 @@ export async function POST(request: NextRequest) {
         content: botResponse.response,
         case_number: caseNumber,
         severity: "medium",
+        author: "Capictive AI", // Provide default author
         published_at: new Date().toISOString(),
       })
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error("[v0] Database error:", error)
+      throw error
+    }
+
+    console.log("[v0] Newsletter saved successfully:", data.id)
 
     return NextResponse.json({
       success: true,
@@ -60,6 +72,12 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("[v0] Error generating newsletter:", error)
-    return NextResponse.json({ error: "Failed to generate newsletter" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Failed to generate newsletter",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
   }
 }
