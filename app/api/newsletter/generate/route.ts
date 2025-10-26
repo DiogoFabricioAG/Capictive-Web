@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { queryCapictiveBot } from "@/lib/capictive-bot"
-import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { getSupabaseAdminClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,8 +31,12 @@ export async function POST(request: NextRequest) {
     const paragraphs = contentWithoutTitle.split("\n\n").filter((p) => p.trim())
     const summary = paragraphs[0]?.substring(0, 200) || "Newsletter generado por Capictive"
 
-    // Save to database
-    const supabase = await getSupabaseServerClient()
+    // Save to database using admin client to bypass RLS for publishing newsletters
+    const supabase = getSupabaseAdminClient()
+    // Generate a fun case number: YEAR-XXXX (4 random digits)
+    const year = new Date().getFullYear()
+    const random4 = Math.floor(1000 + Math.random() * 9000)
+    const caseNumber = `${year}-${random4}`
     const { data, error } = await supabase
       .from("newsletters")
       .insert({
@@ -40,6 +44,8 @@ export async function POST(request: NextRequest) {
         slug,
         summary,
         content: botResponse.response,
+        case_number: caseNumber,
+        severity: "medium",
         published_at: new Date().toISOString(),
       })
       .select()
