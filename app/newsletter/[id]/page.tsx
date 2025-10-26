@@ -9,13 +9,14 @@ import Image from "next/image"
 import { getNewsletterBySlug } from "@/lib/supabase/queries"
 import { marked } from "marked"
 
-export default async function NewsletterDetailPage({ params }: { params: { id: string } }) {
-  console.log("[v0] Newsletter detail page - slug:", params.id)
+export default async function NewsletterDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: slug } = await params
+  console.log("[v0] Newsletter detail page - slug:", slug)
 
   let newsletter
   try {
     // Try to fetch by slug (the id param is actually the slug in the URL)
-    newsletter = await getNewsletterBySlug(params.id)
+    newsletter = await getNewsletterBySlug(slug)
     console.log("[v0] Newsletter fetched:", newsletter ? "success" : "null")
     if (newsletter) {
       console.log("[v0] Newsletter title:", newsletter.title)
