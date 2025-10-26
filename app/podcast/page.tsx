@@ -4,9 +4,16 @@ import { Play, Clock } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { getPodcasts } from "@/lib/supabase/queries"
+import { PodcastGenerator } from "@/components/podcast-generator"
+import { getSupabaseServerClient } from "@/lib/supabase/server"
 
 export default async function PodcastPage() {
   const episodes = await getPodcasts()
+
+  const supabase = await getSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   return (
     <main className="min-h-screen">
@@ -23,6 +30,8 @@ export default async function PodcastPage() {
             Powered by ElevenLabs
           </Badge>
         </div>
+
+        <div className="max-w-4xl mx-auto mb-12">{user && <PodcastGenerator />}</div>
 
         {/* Episodes List */}
         <div className="max-w-4xl mx-auto space-y-6">
