@@ -6,9 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link"
 import { getNewsletters } from "@/lib/supabase/queries"
 import { NewsletterSubscriptionForm } from "@/components/newsletter-subscription-form"
+import { NewsletterGenerator } from "@/components/newsletter-generator"
+import { getSupabaseServerClient } from "@/lib/supabase/server"
 
 export default async function NewsletterPage() {
   const pastNewsletters = await getNewsletters()
+
+  // Check if user is authenticated (optional: add admin check)
+  const supabase = await getSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   return (
     <main className="min-h-screen">
@@ -22,6 +30,12 @@ export default async function NewsletterPage() {
             Recibe análisis semanales sobre política, tecnología y transparencia directamente en tu correo.
           </p>
         </div>
+
+        {user && (
+          <div className="max-w-2xl mx-auto mb-12">
+            <NewsletterGenerator />
+          </div>
+        )}
 
         {/* Subscription Form */}
         <div className="max-w-2xl mx-auto mb-20">
