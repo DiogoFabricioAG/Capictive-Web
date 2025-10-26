@@ -10,16 +10,24 @@ import { getNewsletterBySlug } from "@/lib/supabase/queries"
 import { marked } from "marked"
 
 export default async function NewsletterDetailPage({ params }: { params: { id: string } }) {
+  console.log("[v0] Newsletter detail page - slug:", params.id)
+
   let newsletter
   try {
     // Try to fetch by slug (the id param is actually the slug in the URL)
     newsletter = await getNewsletterBySlug(params.id)
+    console.log("[v0] Newsletter fetched:", newsletter ? "success" : "null")
+    if (newsletter) {
+      console.log("[v0] Newsletter title:", newsletter.title)
+      console.log("[v0] Newsletter content length:", newsletter.content?.length || 0)
+    }
   } catch (error) {
     console.error("[v0] Error fetching newsletter:", error)
     newsletter = null
   }
 
   if (!newsletter) {
+    console.log("[v0] Newsletter not found, showing error page")
     return (
       <main className="min-h-screen">
         <Navbar />
@@ -35,7 +43,14 @@ export default async function NewsletterDetailPage({ params }: { params: { id: s
     )
   }
 
-  const contentHtml = marked(newsletter.content || "")
+  let contentHtml = ""
+  try {
+    contentHtml = marked(newsletter.content || "") as string
+    console.log("[v0] Markdown parsed successfully, HTML length:", contentHtml.length)
+  } catch (error) {
+    console.error("[v0] Error parsing markdown:", error)
+    contentHtml = `<p>${newsletter.content || "No content available"}</p>`
+  }
 
   const formattedDate = new Date(newsletter.published_at).toLocaleDateString("es-ES", {
     day: "numeric",
