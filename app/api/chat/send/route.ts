@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function POST(req: Request) {
   try {
-    const { message, conversationId, userId } = await req.json()
+    const { message, conversationId, userId, style } = await req.json()
 
     if (!message || !userId) {
       return NextResponse.json({ error: "Message and userId are required" }, { status: 400 })
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
     if (userMsgError) throw userMsgError
 
-    const botResponse = await queryCapictiveBot(message)
+    const botResponse = await queryCapictiveBot(message, style)
 
     const { error: assistantMsgError } = await supabase.from("chat_messages").insert({
       conversation_id: currentConversationId,

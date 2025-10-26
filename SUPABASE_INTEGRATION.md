@@ -71,7 +71,7 @@ Usuario → ChatInterface → API Route → Cloudflare Worker → Supabase
 Utilidades para interactuar con el bot de Cloudflare Worker.
 
 **Funciones:**
-- `queryCapictiveBot(query)` - Envía query al Worker y obtiene respuesta
+- `queryCapictiveBot(query, style)` - Envía `{ query, style }` al Worker y obtiene respuesta
 - `formatMarkdownResponse(markdown)` - Convierte markdown a HTML usando `marked`
 
 **Worker URL:** `https://capictive-brain.diogofabricio17.workers.dev`
@@ -79,7 +79,8 @@ Utilidades para interactuar con el bot de Cloudflare Worker.
 **Request:**
 \`\`\`json
 {
-  "query": "tu pregunta aquí"
+  "query": "tu pregunta aquí",
+  "style": "default"
 }
 \`\`\`
 
@@ -109,7 +110,8 @@ API Route que maneja el envío de mensajes.
 {
   "message": "texto del mensaje",
   "conversationId": "uuid o null",
-  "userId": "uuid del usuario"
+  "userId": "uuid del usuario",
+  "style": "default"
 }
 \`\`\`
 

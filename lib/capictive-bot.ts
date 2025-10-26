@@ -6,14 +6,14 @@ export interface BotResponse {
   response: string
 }
 
-export async function queryCapictiveBot(query: string): Promise<string> {
+export async function queryCapictiveBot(query: string, style: string = "default"): Promise<string> {
   try {
     const response = await fetch(WORKER_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, style }),
     })
 
     if (!response.ok) {

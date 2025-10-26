@@ -50,6 +50,7 @@ export default function ChatInterface() {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     const message = formData.get("message") as string
+    const style = (formData.get("style") as string) || "default"
 
     if (!message.trim() || !userId) return
 
@@ -77,6 +78,7 @@ export default function ChatInterface() {
           message,
           conversationId,
           userId,
+          style,
         }),
       })
 
@@ -197,7 +199,22 @@ export default function ChatInterface() {
       </div>
 
       <div className="border-t border-wood/20 bg-white/50 backdrop-blur-sm p-3 sm:p-4">
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex items-center gap-2">
+            <label htmlFor="chat-style" className="text-xs sm:text-sm text-wood-dark whitespace-nowrap">
+              Estilo:
+            </label>
+            <select
+              id="chat-style"
+              name="style"
+              defaultValue="default"
+              className="px-2 py-2 border border-wood/20 rounded-md bg-white text-wood-dark text-xs sm:text-sm cursor-pointer"
+              disabled={isLoading}
+            >
+              <option value="default">Defecto</option>
+              <option value="audio">Audio</option>
+            </select>
+          </div>
           <Textarea
             ref={textareaRef}
             name="message"
