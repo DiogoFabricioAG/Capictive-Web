@@ -50,13 +50,20 @@ export default function ChatInterface({
 
   useEffect(() => {
     async function loadMessages() {
-      if (!conversationId) return
+      if (!conversationId) {
+        console.log("[v0] No conversation ID, skipping message load")
+        return
+      }
+
+      console.log("[v0] Loading messages for conversation:", conversationId)
+      console.log("[v0] Initial messages length:", initialMessages.length)
 
       try {
         const response = await fetch(`/api/chat/messages?conversationId=${conversationId}`)
         if (!response.ok) throw new Error("Failed to load messages")
 
         const data = await response.json()
+        console.log("[v0] Fetched messages from API:", data.messages?.length || 0)
         setMessages(data.messages || [])
       } catch (error) {
         console.error("[v0] Error loading messages:", error)
@@ -65,8 +72,11 @@ export default function ChatInterface({
 
     if (conversationId && initialMessages.length === 0) {
       loadMessages()
+    } else if (initialMessages.length > 0) {
+      console.log("[v0] Using initial messages:", initialMessages.length)
+      setMessages(initialMessages)
     }
-  }, [conversationId, initialMessages.length])
+  }, [conversationId, initialMessages])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })

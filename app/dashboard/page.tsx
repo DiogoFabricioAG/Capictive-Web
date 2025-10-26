@@ -6,8 +6,10 @@ import { getChatMessages } from "@/lib/supabase/queries"
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { conversation?: string }
+  searchParams: Promise<{ conversation?: string }>
 }) {
+  const params = await searchParams
+
   const supabase = await getSupabaseServerClient()
   const {
     data: { user },
@@ -20,10 +22,13 @@ export default async function DashboardPage({
   let conversationId: string | null = null
   let initialMessages: any[] = []
 
-  if (searchParams.conversation) {
-    conversationId = searchParams.conversation
+  if (params.conversation) {
+    conversationId = params.conversation
+    console.log("[v0] Loading conversation:", conversationId)
     try {
       initialMessages = await getChatMessages(conversationId)
+      console.log("[v0] Loaded messages:", initialMessages.length)
+      console.log("[v0] Messages:", JSON.stringify(initialMessages, null, 2))
     } catch (error) {
       console.error("[v0] Error loading conversation:", error)
     }
