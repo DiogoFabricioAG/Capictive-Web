@@ -29,9 +29,9 @@ export function DatabaseSubmissionForm({ onSuccess }: DatabaseSubmissionFormProp
   const playEasterEggAudio = () => {
     try {
       const tracks = [
-        "/audios/mensaje-1-capictive.mp3",
-        "/audios/mensaje-2-capictive.mp3",
-        "/audios/mensaje-3-capictive.mp3",
+        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/git-blob/prj_LsYNk88GeLLZuVuebDkAG5XXAEAr/2lo_SQ-pi7bBu4zXQDjlpP/public/audios/mensaje-1-capictive.mp3",
+        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/git-blob/prj_LsYNk88GeLLZuVuebDkAG5XXAEAr/0ABh7Ur4F9wiJZeEdwoJDf/public/audios/mensaje-2-capictive.mp3",
+        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/git-blob/prj_LsYNk88GeLLZuVuebDkAG5XXAEAr/g_fcEBteYNFk37LGPBXkfT/public/audios/mensaje-3-capictive.mp3",
       ]
       const pick = tracks[Math.floor(Math.random() * tracks.length)]
       const audio = new Audio(pick)
