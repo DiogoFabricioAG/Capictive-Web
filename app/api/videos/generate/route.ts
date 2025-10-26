@@ -17,21 +17,32 @@ export async function POST(request: NextRequest) {
     // Determine the url_video based on the selected option
     const url_video = videoOption === "defecto" ? "" : VIDEO_URLS[videoOption] || ""
 
-    console.log("[v0] Calling n8n webhook with:", { message, url_video })
+    console.log("[v0] Calling n8n webhook (test) with:", { message, url_video })
 
-    // Call the n8n webhook
-    const webhookResponse = await fetch("https://capictive.app.n8n.cloud/webhook-test/message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, url_video }),
-    })
+    const TEST_ENDPOINT = "https://capictive.app.n8n.cloud/webhook-test/message"
+    const PROD_ENDPOINT = "https://capictive.app.n8n.cloud/webhook/message"
 
-    if (!webhookResponse.ok) {
-      throw new Error(`Webhook failed with status ${webhookResponse.status}`)
+    async function callWebhook(endpoint: string) {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, url_video }),
+      })
+      if (!res.ok) {
+        throw new Error(`Webhook failed with status ${res.status}`)
+      }
+      return res.json() as Promise<{ type: string; link: string }>
     }
 
-    const result = await webhookResponse.json()
-    console.log("[v0] Webhook response:", result)
+    let result: { type: string; link: string }
+    try {
+      result = await callWebhook(TEST_ENDPOINT)
+      console.log("[v0] Webhook (test) response:", result)
+    } catch (err) {
+      console.warn("[v0] Test webhook failed, retrying with production...", err)
+      result = await callWebhook(PROD_ENDPOINT)
+      console.log("[v0] Webhook (prod) response:", result)
+    }
 
     const supabase = getSupabaseAdminClient()
 
