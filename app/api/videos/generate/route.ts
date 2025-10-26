@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         description: message,
         youtube_url: result.type === "video" ? result.link : null, // Use youtube_url instead of video_url
         twitter_url: result.type === "video" ? result.link : "#", // Keep twitter_url for social sharing
-        thumbnail_url: result.type === "audio" ? "/images/capictive-detective-poster.png" : null,
+        thumbnail_url: result.type === "audio" ? "/images/capictive-detective-poster.png" : "/images/capictive-real-life.png",
         duration: "Por determinar",
         published_at: new Date().toISOString(),
       })
