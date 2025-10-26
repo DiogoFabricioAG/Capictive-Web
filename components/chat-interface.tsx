@@ -14,13 +14,22 @@ interface Message {
   role: "user" | "assistant"
   content: string
   created_at: string
-  audioUrl?: string | null
+  audio_url?: string | null
+  response_type?: "text" | "audio"
 }
 
-export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([])
+interface ChatInterfaceProps {
+  conversationId?: string | null
+  initialMessages?: Message[]
+}
+
+export default function ChatInterface({
+  conversationId: initialConversationId,
+  initialMessages = [],
+}: ChatInterfaceProps) {
+  const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [isLoading, setIsLoading] = useState(false)
-  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [conversationId, setConversationId] = useState<string | null>(initialConversationId || null)
   const [userId, setUserId] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -61,6 +70,7 @@ export default function ChatInterface() {
       role: "user",
       content: message,
       created_at: new Date().toISOString(),
+      response_type: "text",
     }
     setMessages((prev) => [...prev, userMessage])
 
@@ -95,18 +105,19 @@ export default function ChatInterface() {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: data.response,
-        audioUrl: data.audioUrl ?? null,
+        audio_url: data.audioUrl ?? null,
+        response_type: data.audioUrl ? "audio" : "text",
         created_at: new Date().toISOString(),
       }
       setMessages((prev) => [...prev, assistantMessage])
     } catch (error) {
       console.error("[v0] Error sending message:", error)
-      // Show error message
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: "Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.",
         created_at: new Date().toISOString(),
+        response_type: "text",
       }
       setMessages((prev) => [...prev, errorMessage])
     } finally {
@@ -177,11 +188,11 @@ export default function ChatInterface() {
                     className="prose prose-sm sm:prose-base max-w-none prose-headings:text-wood-dark prose-p:text-wood-dark prose-strong:text-wood-dark prose-li:text-wood-dark"
                     dangerouslySetInnerHTML={{ __html: formatMarkdownResponse(message.content) }}
                   />
-                  {message.audioUrl && (
+                  {message.audio_url && (
                     <div className="mt-3">
-                      <audio controls src={message.audioUrl} className="w-full">
+                      <audio controls src={message.audio_url} className="w-full">
                         <track kind="captions" />
-                        Your browser does not support the audio element.
+                        Tu navegador no soporta el elemento de audio.
                       </audio>
                     </div>
                   )}

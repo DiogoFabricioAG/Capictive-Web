@@ -13,9 +13,11 @@ interface DashboardLayoutProps {
     email?: string
     id: string
   }
+  conversationId?: string | null
+  initialMessages?: any[]
 }
 
-export default function DashboardLayout({ user }: DashboardLayoutProps) {
+export default function DashboardLayout({ user, conversationId, initialMessages = [] }: DashboardLayoutProps) {
   const [activeSection, setActiveSection] = useState("chat")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -147,7 +149,9 @@ export default function DashboardLayout({ user }: DashboardLayoutProps) {
       )}
 
       <main className="flex-1 overflow-hidden">
-        {activeSection === "chat" && <ChatInterface />}
+        {activeSection === "chat" && (
+          <ChatInterface conversationId={conversationId} initialMessages={initialMessages} />
+        )}
         {activeSection === "analytics" && (
           <div className="h-full flex items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-cream to-white">
             <div className="text-center max-w-md">

@@ -1,4 +1,4 @@
-import { Database, FileText, Globe, Shield, Search, Clock, CheckCircle2, AlertCircle } from "lucide-react"
+import { Database, FileText, Globe, Shield, Search, Clock, CheckCircle2, AlertCircle, Download } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,48 @@ import Footer from "@/components/footer"
 import Link from "next/link"
 import { DatabaseSubmissionModal } from "@/components/database-submission-modal"
 
-export default function DatabasePage() {
+interface R2File {
+  name: string
+  full_path: string
+  size: number
+  uploaded: string
+  etag: string
+  url: string
+}
+
+async function getGovernmentFiles(): Promise<R2File[]> {
+  try {
+    const response = await fetch("https://capictive-rest.diogofabricio17.workers.dev/api/files/gubernamental", {
+      cache: "no-store",
+    })
+    if (!response.ok) return []
+    const files: R2File[] = await response.json()
+    return files.filter((file) => file.size > 0)
+  } catch (error) {
+    console.error("Error fetching government files:", error)
+    return []
+  }
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes"
+  const k = 1024
+  const sizes = ["Bytes", "KB", "MB", "GB"]
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
+}
+
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString("es-ES", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
+}
+
+export default async function DatabasePage() {
+  const governmentFiles = await getGovernmentFiles()
+
   const sources = [
     {
       category: "Fuentes Gubernamentales",
@@ -194,6 +235,64 @@ export default function DatabasePage() {
               </Button>
             </div>
           </div>
+
+          {governmentFiles.length > 0 && (
+            <div className="max-w-6xl mx-auto mb-12 sm:mb-16">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-wood" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">Documentos Gubernamentales</h2>
+                </div>
+                <Badge variant="outline" className="border-wood/20 text-wood w-fit sm:ml-auto">
+                  {governmentFiles.length} documentos
+                </Badge>
+              </div>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {governmentFiles.map((file, index) => (
+                  <Card
+                    key={index}
+                    className="p-4 sm:p-5 bg-card border-wood/10 hover:border-mustard/30 transition-all hover:shadow-md"
+                  >
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-lg bg-mustard/10 flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-5 h-5 text-mustard" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground mb-1 text-sm truncate" title={file.name}>
+                          {file.name.replace(".pdf", "")}
+                        </h3>
+                        <Badge variant="secondary" className="bg-wood/10 text-wood border-0 text-xs">
+                          PDF
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>Subido: {formatDate(file.uploaded)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Download className="w-3 h-3" />
+                        <span>Tamaño: {formatFileSize(file.size)}</span>
+                      </div>
+                    </div>
+
+                    <Link href={file.url} target="_blank" rel="noopener noreferrer">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-wood/20 hover:bg-mustard/10 bg-transparent cursor-pointer text-xs sm:text-sm"
+                      >
+                        Ver Documento
+                      </Button>
+                    </Link>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Verification Process */}
           <div className="max-w-5xl mx-auto mb-16 sm:mb-20">

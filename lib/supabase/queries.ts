@@ -87,7 +87,7 @@ export async function getChatMessages(conversationId: string) {
   const supabase = await createServerClient()
   const { data, error } = await supabase
     .from("chat_messages")
-    .select("*")
+    .select("id, conversation_id, role, content, audio_url, response_type, created_at")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true })
 
@@ -103,11 +103,23 @@ export async function createChatConversation(userId: string, title: string) {
   return data
 }
 
-export async function saveChatMessage(conversationId: string, role: "user" | "assistant", content: string) {
+export async function saveChatMessage(
+  conversationId: string,
+  role: "user" | "assistant",
+  content: string,
+  audioUrl?: string | null,
+  responseType?: "text" | "audio",
+) {
   const supabase = await createServerClient()
   const { data, error } = await supabase
     .from("chat_messages")
-    .insert({ conversation_id: conversationId, role, content })
+    .insert({
+      conversation_id: conversationId,
+      role,
+      content,
+      audio_url: audioUrl || null,
+      response_type: responseType || "text",
+    })
     .select()
     .single()
 
